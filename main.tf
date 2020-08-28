@@ -202,12 +202,13 @@ resource "aws_route53_record" "bastion_record_name" {
 
   alias {
     evaluate_target_health = true
-    name                   = aws_lb.bastion_lb.dns_name
-    zone_id                = aws_lb.bastion_lb.zone_id
+    name                   = length(var.load_balancer_name)==0 ? aws_lb.bastion_lb[0].dns_name : data.aws_elb.existing_lb[0].dns_name
+    zone_id                = length(var.load_balancer_name)==0 ? aws_lb.bastion_lb[0].zone_id : data.aws_elb.existing_lb[0].zone_id
   }
 }
 
 resource "aws_lb" "bastion_lb" {
+  count = length(var.load_balancer_name)==0 ? 1: 0
   internal = var.is_lb_private
   name     = "${local.name_prefix}-lb"
 
@@ -215,6 +216,11 @@ resource "aws_lb" "bastion_lb" {
 
   load_balancer_type = "network"
   tags               = merge(var.tags)
+}
+
+data "aws_elb" "existing_lb" {
+  count = length(var.load_balancer_name)==0 ? 0: 1
+  name  = var.load_balancer_name
 }
 
 resource "aws_lb_target_group" "bastion_lb_target_group" {
@@ -238,7 +244,7 @@ resource "aws_lb_listener" "bastion_lb_listener_22" {
     type             = "forward"
   }
 
-  load_balancer_arn = aws_lb.bastion_lb.arn
+  load_balancer_arn = length(var.load_balancer_name)==0 ? aws_lb.bastion_lb[0].arn : data.aws_elb.existing_lb[0].arn
   port              = var.public_ssh_port
   protocol          = "TCP"
 }
@@ -306,7 +312,7 @@ resource "aws_autoscaling_group" "bastion_auto_scaling_group" {
     "OldestLaunchConfiguration",
   ]
 
-  tags = merge({ propagate_at_launch = "true"}, local.tags_asg_format )
+  tags = local.tags_asg_format
 
   lifecycle {
     create_before_destroy = true
