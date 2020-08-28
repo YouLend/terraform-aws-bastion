@@ -283,7 +283,7 @@ resource "aws_launch_template" "bastion_launch_template" {
 }
 
 resource "aws_autoscaling_group" "bastion_auto_scaling_group" {
-  name_prefix = "${local.name_prefix}"
+  name_prefix = local.name_prefix
   launch_template {
     id      = aws_launch_template.bastion_launch_template.id
     version = "$Latest"
