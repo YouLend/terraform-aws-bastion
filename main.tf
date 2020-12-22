@@ -218,7 +218,7 @@ resource "aws_lb" "bastion_lb" {
 }
 
 resource "aws_lb_target_group" "bastion_lb_target_group" {
-  name        = "${local.name_prefix}-lb-target"
+  name        = "${local.name_prefix}-tg"
   port        = var.public_ssh_port
   protocol    = "TCP"
   vpc_id      = var.vpc_id
